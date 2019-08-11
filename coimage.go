@@ -115,20 +115,20 @@ func Co(pattern string, destination string, direction Direction) {
 			case Right:
 				rect := image.Rect(x, y, x+img.width, img.height)
 				draw.Draw(rgba, rect, *img.image, image.Point{0, 0}, draw.Over)
-				x += img.height
+				x += img.width
 			case Top:
 				y -= img.height
 				rect := image.Rect(x, y, img.width, y+img.height)
 				draw.Draw(rgba, rect, *img.image, image.Point{0, 0}, draw.Over)
 			case Left:
-				x -= img.height
+				x -= img.width
 				rect := image.Rect(x, y, x+img.width, img.height)
 				draw.Draw(rgba, rect, *img.image, image.Point{0, 0}, draw.Over)
 			}
 		}
 
 		outfile := destination
-		if len(outputList) > 0 {
+		if len(outputList) > 1 {
 			outfile += "." + strconv.Itoa(index+1)
 		}
 		out, err := os.Create(outfile)

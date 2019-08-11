@@ -36,17 +36,13 @@ func main() {
 	app.Action = func(c *cli.Context) error {
 		var direction coimage.Direction
 		switch c.String("direction") {
-		case "t":
-		case "top":
+		case "t", "top":
 			direction = coimage.Top
-		case "l":
-		case "left":
+		case "l", "left":
 			direction = coimage.Left
-		case "b":
-		case "bottom":
+		case "b", "bottom":
 			direction = coimage.Bottom
-		case "r":
-		case "right":
+		case "r", "right":
 			direction = coimage.Right
 		}
 

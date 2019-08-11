@@ -1,13 +1,13 @@
 package coimage
 
 import (
-	"log"
-	"os"
-	"strconv"
 	"image"
 	"image/draw"
 	"image/jpeg"
+	"log"
+	"os"
 	"path/filepath"
+	"strconv"
 )
 
 type Direction int
@@ -19,9 +19,9 @@ type imageData struct {
 }
 
 type outputData struct {
-	totalWidth int
+	totalWidth  int
 	totalHeight int
-	imageList []*imageData
+	imageList   []*imageData
 }
 
 const (
@@ -36,7 +36,7 @@ func Co(pattern string, destination string, direction Direction) {
 		imageList: []*imageData{},
 	}
 	outputList := []*outputData{output}
-	
+
 	matches, err := filepath.Glob(pattern)
 	if err != nil {
 		log.Fatal(err)
@@ -60,7 +60,7 @@ func Co(pattern string, destination string, direction Direction) {
 		switch direction {
 		case Bottom, Top:
 			tmpHeight := output.totalHeight + height
-			if tmpHeight >= 1 << 16 {
+			if tmpHeight >= 1<<16 {
 				output = &outputData{
 					imageList: []*imageData{},
 				}
@@ -72,7 +72,7 @@ func Co(pattern string, destination string, direction Direction) {
 			}
 		case Right, Left:
 			tmpWidth := output.totalWidth + width
-			if tmpWidth >= 1 << 16 {
+			if tmpWidth >= 1<<16 {
 				output = &outputData{
 					imageList: []*imageData{},
 				}

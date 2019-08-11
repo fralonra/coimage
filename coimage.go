@@ -10,6 +10,7 @@ import (
 	"strconv"
 )
 
+// Direction describes which side the image is appended to.
 type Direction int
 
 type imageData struct {
@@ -25,12 +26,17 @@ type outputData struct {
 }
 
 const (
+	// Top indicates that the newer image will be appended to the top of the older image.
 	Top Direction = iota
+	// Left indicates that the newer image will be appended to the left of the older image.
 	Left
+	// Bottom indicates that the newer image will be appended to the bottom of the older image.
 	Bottom
+	// Right indicates that the newer image will be appended to the right of the older image.
 	Right
 )
 
+// Co is the main function doing the image manipulation. It uses pattern to find matched images, combines them to the given side, and creates an output file to the given destination.
 func Co(pattern string, destination string, direction Direction) {
 	output := &outputData{
 		imageList: []*imageData{},
@@ -142,18 +148,22 @@ func Co(pattern string, destination string, direction Direction) {
 	}
 }
 
+// CoTop combines images to top.
 func CoTop(pattern string, destination string) {
 	Co(pattern, destination, Top)
 }
 
+// CoLeft combines images to left.
 func CoLeft(pattern string, destination string) {
 	Co(pattern, destination, Left)
 }
 
+// CoBottom combines images to bottom.
 func CoBottom(pattern string, destination string) {
 	Co(pattern, destination, Bottom)
 }
 
+// CoRight combines images to right.
 func CoRight(pattern string, destination string) {
 	Co(pattern, destination, Right)
 }

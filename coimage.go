@@ -3,7 +3,7 @@ package coimage
 import (
 	"log"
 	"os"
-
+	"strconv"
 	"image"
 	"image/draw"
 	"image/jpeg"
@@ -18,6 +18,12 @@ type imageData struct {
 	height int
 }
 
+type outputData struct {
+	totalWidth int
+	totalHeight int
+	imageList []*imageData
+}
+
 const (
 	Top Direction = iota
 	Left
@@ -26,9 +32,11 @@ const (
 )
 
 func Co(pattern string, destination string, direction Direction) {
-	totalWidth, totalHeight, maxWidth, maxHeight := 0, 0, 0, 0
-
-	imageList := []*imageData{}
+	output := &outputData{
+		imageList: []*imageData{},
+	}
+	outputList := []*outputData{output}
+	
 	matches, err := filepath.Glob(pattern)
 	if err != nil {
 		log.Fatal(err)
@@ -50,70 +58,88 @@ func Co(pattern string, destination string, direction Direction) {
 		width := bound.Max.X
 		height := bound.Max.Y
 		switch direction {
-		case Top:
-		case Bottom:
-			totalHeight += height
-			if width > maxWidth {
-				maxWidth = width
+		case Bottom, Top:
+			tmpHeight := output.totalHeight + height
+			if tmpHeight >= 1 << 16 {
+				output = &outputData{
+					imageList: []*imageData{},
+				}
+				outputList = append(outputList, output)
 			}
-		case Left:
-		case Right:
-			totalWidth += width
-			if height > maxHeight {
-				maxHeight = height
+			output.totalHeight += height
+			if width > output.totalWidth {
+				output.totalWidth = width
+			}
+		case Right, Left:
+			tmpWidth := output.totalWidth + width
+			if tmpWidth >= 1 << 16 {
+				output = &outputData{
+					imageList: []*imageData{},
+				}
+				outputList = append(outputList, output)
+			}
+			output.totalWidth += width
+			if height > output.totalHeight {
+				output.totalHeight = height
 			}
 		}
 
-		imageList = append(imageList, &imageData{
+		output.imageList = append(output.imageList, &imageData{
 			image:  &img,
 			width:  width,
 			height: height,
 		})
 	}
 
-	var rgba *image.RGBA
-	switch direction {
-	case Top:
-	case Bottom:
-		rgba = image.NewRGBA(image.Rect(0, 0, maxWidth, totalHeight))
-	case Left:
-	case Right:
-		rgba = image.NewRGBA(image.Rect(0, 0, totalWidth, maxHeight))
-	}
-
-	var x, y int
-	if direction == Top {
-		y = totalHeight
-	} else if direction == Left {
-		x = totalWidth
-	}
-	for _, img := range imageList {
+	for index, output := range outputList {
+		var rgba *image.RGBA
 		switch direction {
-		case Top:
-			y -= img.height
-			rect := image.Rect(x, y, x+img.width, y+img.height)
-			draw.Draw(rgba, rect, *img.image, image.Point{0, 0}, draw.Over)
-		case Bottom:
-			rect := image.Rect(x, y, x+img.width, y+img.height)
-			draw.Draw(rgba, rect, *img.image, image.Point{0, 0}, draw.Over)
-			y += img.height
-		case Left:
-			x -= img.height
-			rect := image.Rect(x, y, x+img.width, y+img.height)
-			draw.Draw(rgba, rect, *img.image, image.Point{0, 0}, draw.Over)
-		case Right:
-			rect := image.Rect(x, y, x+img.width, y+img.height)
-			draw.Draw(rgba, rect, *img.image, image.Point{0, 0}, draw.Over)
-			x += img.height
+		case Bottom, Top:
+			rgba = image.NewRGBA(image.Rect(0, 0, output.totalWidth, output.totalHeight))
+		case Right, Left:
+			rgba = image.NewRGBA(image.Rect(0, 0, output.totalWidth, output.totalHeight))
+		}
+		var x, y int
+		if direction == Top {
+			y = output.totalHeight
+		} else if direction == Left {
+			x = output.totalWidth
+		}
+
+		for _, img := range output.imageList {
+			switch direction {
+			case Bottom:
+				rect := image.Rect(x, y, img.width, y+img.height)
+				draw.Draw(rgba, rect, *img.image, image.Point{0, 0}, draw.Over)
+				y += img.height
+			case Right:
+				rect := image.Rect(x, y, x+img.width, img.height)
+				draw.Draw(rgba, rect, *img.image, image.Point{0, 0}, draw.Over)
+				x += img.height
+			case Top:
+				y -= img.height
+				rect := image.Rect(x, y, img.width, y+img.height)
+				draw.Draw(rgba, rect, *img.image, image.Point{0, 0}, draw.Over)
+			case Left:
+				x -= img.height
+				rect := image.Rect(x, y, x+img.width, img.height)
+				draw.Draw(rgba, rect, *img.image, image.Point{0, 0}, draw.Over)
+			}
+		}
+
+		outfile := destination
+		if len(outputList) > 0 {
+			outfile += "." + strconv.Itoa(index+1)
+		}
+		out, err := os.Create(outfile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = jpeg.Encode(out, rgba, &jpeg.Options{Quality: 90})
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
-
-	out, err := os.Create(destination)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	jpeg.Encode(out, rgba, &jpeg.Options{Quality: 90})
 }
 
 func CoTop(pattern string, destination string) {
